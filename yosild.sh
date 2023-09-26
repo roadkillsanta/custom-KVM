@@ -8,12 +8,12 @@
 # ---------------------------------------
 
 # ----- Config --------------------------
-device="sdc"
-distro_name="Yosild"
-distro_desc="Your simple Linux distro"
-distro_codename="chinchilla"
-telnetd_enabled="true"
-hyperv_support="false"
+device="/media/iso"
+distro_name="test"
+distro_desc="test"
+distro_codename="ballsmacker"
+telnetd_enabled="false"
+hyperv_support="true"
 kernel="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.16.19.tar.xz"
 busybox="https://busybox.net/downloads/busybox-1.34.1.tar.bz2"
 # ---------------------------------------
@@ -23,59 +23,46 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 clear && printf "\n** $distro_name - creating distribution\n\n"
-printf "** Are you sure that you want to delete all data from /dev/$device drive? (y/n): "
-read answer
-[ $answer != "y" ] && exit 1
-if [ $( mountpoint -qd /mnt ) ]; then
-  printf "** Can I umount /mnt? (y/n): "
-  read answer
-  [ $answer != "y" ] && exit 1
-  umount /mnt
-fi
+printf "** Deleting all data from $device"
+[ $( mountpoint -qd /mnt ) ] || umount /mnt
+
 
 # installation of the BusyBox
 [ -d ./files ] || mkdir files
-answer="n"
-if [ -f files/busybox/busybox ] ; then
-  printf "** Do you want to use a previously compiled BusyBox? (y/n): "
-  read answer
-fi
-if [ $answer != "y" ] ; then
-  echo "** BusyBox installation"
+echo "** BusyBox installation"
 
-  apt update && apt install -y ca-certificates wget build-essential\
-      libncurses5 libncurses5-dev bison flex libelf-dev chrpath gawk\
-      texinfo libsdl1.2-dev whiptail diffstat cpio libssl-dev bc
+apt update && apt install -y ca-certificates wget build-essential\
+libncurses5 libncurses5-dev bison flex libelf-dev chrpath gawk\
+texinfo libsdl1.2-dev whiptail diffstat cpio libssl-dev bc
 
-  cd files/
-  rm -r busybox* > /dev/null 2>&1
-  wget $busybox -O busybox.tar.bz2
-  tar -xf busybox.tar.bz2
-  rm *.tar.bz2
-  mv busybox* busybox
-  cd busybox
-  make defconfig
+cd files/
+rm -r busybox* > /dev/null 2>&1
+wget $busybox -O busybox.tar.bz2
+tar -xf busybox.tar.bz2
+rm *.tar.bz2
+mv busybox* busybox
+cd busybox
+make defconfig
 
-  # BusyBox configuration --------------------------------
-  sed 's/^.*CONFIG_STATIC.*$/CONFIG_STATIC=y/' -i .config
-  sed 's/^CONFIG_MAN=y/CONFIG_MAN=n/' -i .config
-  echo "CONFIG_STATIC_LIBGCC=y" >> .config
-  # ------------------------------------------------------
-  make
-  cd ../../
-fi
+# BusyBox configuration --------------------------------
+sed 's/^.*CONFIG_STATIC.*$/CONFIG_STATIC=y/' -i .config
+sed 's/^CONFIG_MAN=y/CONFIG_MAN=n/' -i .config
+echo "CONFIG_STATIC_LIBGCC=y" >> .config
+# ------------------------------------------------------
+make
+cd ../../
 
 
-echo "** Partitioning /dev/$device" && sleep 2
+echo "** Partitioning $device" && sleep 2
 part=1
 lba=2048
-wipefs -af /dev/$device > /dev/null 2>&1
+wipefs -af $device > /dev/null 2>&1
   echo "** Preparation of the system partition"
   printf "n\np\n${part}\n2048\n\nw\n" | \
-	 ./files/busybox/busybox fdisk /dev/$device > /dev/null 2>&1
+	 ./files/busybox/busybox fdisk $device > /dev/null 2>&1
 
-echo y | mkfs.ext4 /dev/${device}${part}
-uuid=$(blkid /dev/${device}${part} -sUUID -ovalue)
+echo y | mkfs.ext4 ${device}${part}
+uuid=$(blkid ${device}${part} -sUUID -ovalue)
 
 
 mount /dev/${device}${part} /mnt
@@ -83,21 +70,13 @@ mkdir /mnt/boot
 host=$(printf $(printf $distro_name | tr A-Z a-z) | cut -d" " -f 1)
 
 echo "** Compilation of the kernel"
-arch=$(uname -m)
-[ $arch = 'i686' ] && arch="i386"
-answer="n"
-if [ -f files/linux/arch/$arch/boot/bzImage ] ; then
-  printf "** Do you want to use a previously compiled kernel? (y/n): "
-  read answer
-fi
-if [ $answer != "y" ] ; then
-  cd files
-  rm -r linux* > /dev/null 2>&1
-  wget $kernel 
-  tar -xf *.tar.xz
-  rm linux-*.tar.xz
-  mv linux* linux
-  cd linux
+cd files
+rm -r linux* > /dev/null 2>&1
+wget $kernel 
+tar -xf *.tar.xz
+rm linux-*.tar.xz
+mv linux* linux
+cd linux
 
 
 # Linux Kernel config --------------------------------------
@@ -122,7 +101,7 @@ initrd_file=initrd.img-$kernel_release-$arch
 cp files/linux/arch/$arch/boot/bzImage /mnt/boot/$kernel_file
 
 echo "** Installation of GRUB"
-grub-install --root-directory=/mnt /dev/$device
+grub-install --root-directory=/mnt $device
 printf "timeout=3
 menuentry '$distro_name - $distro_desc' {
 linux /boot/$kernel_file quiet rootdelay=130
