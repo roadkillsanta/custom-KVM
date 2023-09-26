@@ -91,10 +91,10 @@ EOF
 fi
 # ----------------------------------------------------------
 
-  make defconfig
-  make
-  cd ../../
-fi
+make defconfig
+make
+cd ../../
+
 kernel_release=$(cat files/linux/include/config/kernel.release)
 kernel_file=vmlinuz-$kernel_release-$arch
 initrd_file=initrd.img-$kernel_release-$arch
