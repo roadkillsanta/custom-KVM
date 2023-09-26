@@ -8,7 +8,7 @@
 # ---------------------------------------
 
 # ----- Config --------------------------
-device="/media/iso"
+device="/dev/loop99"
 distro_name="test"
 distro_desc="test"
 distro_codename="ballsmacker"
