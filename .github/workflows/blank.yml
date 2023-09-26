@@ -25,7 +25,7 @@ jobs:
           mkfs.fat -F 32 image.iso
           sudo mkdir /media/iso
           sudo mount -o loop image.iso /media/iso
-          losetup | grep "image.iso" | grep "/dev/loop.
+          losetup | grep "image.iso" | grep "/dev/loop."
 
       # Runs a single command using the runners shell
       #- name: Build image
