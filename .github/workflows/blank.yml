@@ -24,7 +24,7 @@ jobs:
           mkfs.ext4 -j image.iso
           mkfs.fat -F 32 image.iso
           sudo mkdir /media/iso
-          sudo mount -o loop image.iso /media/iso
+          sudo mount -o loop99 image.iso /media/iso
 
       # Runs a single command using the runners shell
       - name: Build image
