@@ -20,7 +20,7 @@ jobs:
 
       - name: Setup image file for build
         run: |
-          fallocate -l 512M image.iso\
+          fallocate -l 512M image.iso
           mkfs.ext4 -j image.iso
           mkfs.fat -F 32 image.iso
           sudo mkdir /media/iso
