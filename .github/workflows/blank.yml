@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - name: Setup image file for build
+        run: |
+          fallocate -l 512M image.iso\
+          mkfs.ext4 -j image.iso
+          mkfs.fat -F 32 image.iso
+          sudo mkdir /media/iso
+          sudo mount -o loop image.iso /media/iso
+
+      # Runs a single command using the runners shell
+      - name: Build image
+        run: |
+          sudo ./yosild.sh
+      
+      - uses: actions/upload-artifact@v3
+        with:
+          name: linux
+          path: image.iso
