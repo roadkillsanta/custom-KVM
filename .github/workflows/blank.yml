@@ -29,7 +29,7 @@ jobs:
       # Runs a single command using the runners shell
       - name: Build image
         run: |
-          sudo ./yosild.sh
+          sudo sh yosild.sh
       
       - uses: actions/upload-artifact@v3
         with:
