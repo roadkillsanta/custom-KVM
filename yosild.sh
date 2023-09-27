@@ -390,11 +390,8 @@ touch proc/mounts var/log/wtmp var/log/lastlog
 chmod 640  etc/shadow etc/inittab
 chmod 664  var/log/lastlog var/log/wtmp
 chmod 4755 bin/busybox
-chmod 755  usr/sbin/nologin sbin/disban init sbin/man etc/init.d/rcS\
-           usr/sbin/logrotate usr/bin/add-rc.d sbin/halt\
-           usr/share/udhcpc/default.script 
-chmod 644  etc/passwd etc/group etc/hostname etc/shells etc/hosts etc/fstab\
-           etc/issue etc/motd etc/network/interfaces etc/profile
+chmod 755  usr/sbin/nologin sbin/disban init sbin/man etc/init.d/rcS usr/sbin/logrotate usr/bin/add-rc.d sbin/halt usr/share/udhcpc/default.script 
+chmod 644  etc/passwd etc/group etc/hostname etc/shells etc/hosts etc/fstab etc/issue etc/motd etc/network/interfaces etc/profile
 
 echo "** Building initramfs"
 find . | cpio -H newc -o 2> /dev/null | gzip > /mnt/boot/$initrd_file
