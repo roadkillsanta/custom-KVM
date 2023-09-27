@@ -25,12 +25,11 @@ jobs:
           mkfs.fat -F 32 image.iso
           sudo mkdir /media/iso
           sudo mount -o loop image.iso /media/iso
-          losetup | grep "image.iso" | grep "/dev/loop."
 
       # Runs a single command using the runners shell
-      #- name: Build image
-      #  run: |
-      #    sudo sh yosild.sh
+      - name: Build image
+        run: |
+          sudo sh yosild.sh
       
       - uses: actions/upload-artifact@v3
         with:
