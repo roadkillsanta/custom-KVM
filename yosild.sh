@@ -8,7 +8,7 @@
 # ---------------------------------------
 
 # ----- Config --------------------------
-device="/dev/loop99"
+device=$(losetup | grep "image.iso" | grep -o "/dev/loop.")
 distro_name="test"
 distro_desc="test"
 distro_codename="ballsmacker"
