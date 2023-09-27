@@ -8,12 +8,12 @@
 # ---------------------------------------
 
 # ----- Config --------------------------
-device=$(losetup | grep "image.iso" | grep -o "loop.")
-distro_name="Yosild"
-distro_desc="Your simple Linux distro"
-distro_codename="chinchilla"
-telnetd_enabled="true"
-hyperv_support="false"
+device=$(losetup | grep "image.iso" | grep -o "/dev/loop.")
+distro_name="test"
+distro_desc="test"
+distro_codename="ballsmacker"
+telnetd_enabled="false"
+hyperv_support="true"
 kernel="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.16.19.tar.xz"
 busybox="https://busybox.net/downloads/busybox-1.34.1.tar.bz2"
 # ---------------------------------------
@@ -23,81 +23,52 @@ if [ $(id -u) -ne 0 ]; then
 fi
 
 clear && printf "\n** $distro_name - creating distribution\n\n"
-printf "** Are you sure that you want to delete all data from /dev/$device drive? (y/n): "
-read answer
-[ $answer != "y" ] && exit 1
-if [ $( mountpoint -qd /mnt ) ]; then
-  printf "** Can I umount /mnt? (y/n): "
-  read answer
-  [ $answer != "y" ] && exit 1
-  umount /mnt
-fi
+printf "** Deleting all data from $device"
+[ $( mountpoint -qd /mnt ) ] || umount /mnt
+
 
 # installation of the BusyBox
 [ -d ./files ] || mkdir files
-answer="n"
-if [ -f files/busybox/busybox ] ; then
-  printf "** Do you want to use a previously compiled BusyBox? (y/n): "
-  read answer
-fi
-if [ $answer != "y" ] ; then
-  echo "** BusyBox installation"
+echo "** BusyBox installation"
 
-  apt update && apt install -y ca-certificates wget build-essential\
-      libncurses5 libncurses5-dev bison flex libelf-dev chrpath gawk\
-      texinfo libsdl1.2-dev whiptail diffstat cpio libssl-dev bc
+apt update && apt install -y ca-certificates wget build-essential libncurses5 libncurses5-dev bison flex libelf-dev chrpath gawk texinfo libsdl1.2-dev whiptail diffstat cpio libssl-dev bc
 
-  cd files/
-  rm -r busybox* > /dev/null 2>&1
-  wget $busybox -O busybox.tar.bz2
-  tar -xf busybox.tar.bz2
-  rm *.tar.bz2
-  mv busybox* busybox
-  cd busybox
-  make defconfig
+cd files/
+rm -r busybox* > /dev/null 2>&1
+wget $busybox -O busybox.tar.bz2
+tar -xf busybox.tar.bz2
+rm *.tar.bz2
+mv busybox* busybox
+cd busybox
+make defconfig
 
-  # BusyBox configuration --------------------------------
-  sed 's/^.*CONFIG_STATIC.*$/CONFIG_STATIC=y/' -i .config
-  sed 's/^CONFIG_MAN=y/CONFIG_MAN=n/' -i .config
-  echo "CONFIG_STATIC_LIBGCC=y" >> .config
-  # ------------------------------------------------------
-  make
-  cd ../../
-fi
+# BusyBox configuration --------------------------------
+sed 's/^.*CONFIG_STATIC.*$/CONFIG_STATIC=y/' -i .config
+sed 's/^CONFIG_MAN=y/CONFIG_MAN=n/' -i .config
+echo "CONFIG_STATIC_LIBGCC=y" >> .config
+# ------------------------------------------------------
+make
+cd ../../
 
-
-echo "** Partitioning /dev/$device" && sleep 2
-part=1
+echo "** Partitioning $" && sleep 2
 lba=2048
-wipefs -af /dev/$device > /dev/null 2>&1
+wipefs -af $ > /dev/null 2>&1
   echo "** Preparation of the system partition"
-  printf "n\np\n${part}\n2048\n\nw\n" | \
-	 ./files/busybox/busybox fdisk /dev/$device > /dev/null 2>&1
+  printf "n\np\n\n2048\n\nw\n" | ./files/busybox/busybox fdisk $ > /dev/null 2>&1
+uuid=$(blkid ${device} -sUUID -ovalue)
 
-echo y | mkfs.ext4 /dev/${device}
-uuid=$(blkid /dev/${device} -sUUID -ovalue)
-
-
-mount /dev/${device} /mnt
+mount ${device} /mnt
 mkdir /mnt/boot
 host=$(printf $(printf $distro_name | tr A-Z a-z) | cut -d" " -f 1)
 
 echo "** Compilation of the kernel"
-arch=$(uname -m)
-[ $arch = 'i686' ] && arch="i386"
-answer="n"
-if [ -f files/linux/arch/$arch/boot/bzImage ] ; then
-  printf "** Do you want to use a previously compiled kernel? (y/n): "
-  read answer
-fi
-if [ $answer != "y" ] ; then
-  cd files
-  rm -r linux* > /dev/null 2>&1
-  wget $kernel 
-  tar -xf *.tar.xz
-  rm linux-*.tar.xz
-  mv linux* linux
-  cd linux
+cd files
+rm -r linux* > /dev/null 2>&1
+wget $kernel 
+tar -xf *.tar.xz
+rm linux-*.tar.xz
+mv linux* linux
+cd linux
 
 
 # Linux Kernel config --------------------------------------
@@ -112,17 +83,17 @@ EOF
 fi
 # ----------------------------------------------------------
 
-  make defconfig
-  make
-  cd ../../
-fi
+make defconfig
+make
+cd ../../
+
 kernel_release=$(cat files/linux/include/config/kernel.release)
 kernel_file=vmlinuz-$kernel_release-$arch
 initrd_file=initrd.img-$kernel_release-$arch
 cp files/linux/arch/$arch/boot/bzImage /mnt/boot/$kernel_file
 
 echo "** Installation of GRUB"
-grub-install --root-directory=/mnt /dev/$device
+grub-install --root-directory=/mnt $device
 printf "timeout=3
 menuentry '$distro_name - $distro_desc' {
 linux /boot/$kernel_file quiet rootdelay=130
@@ -135,12 +106,7 @@ echo Loading Linux
 # creation of necessary directories
 mkdir rootfs
 cd rootfs
-mkdir -p bin dev lib lib64 run mnt/root proc sbin sys usr/bin \
-         usr/sbin tmp home var/log usr/share/udhcpc usr/local/bin \
-         var/spool/cron/crontabs etc/init.d etc/rc.d var/run \
-         var/www/html etc/network/if-down.d etc/network/if-post-down.d \
-         etc/network/if-pre-up.d etc/network/if-up.d run \
-         etc/cron/daily etc/cron/hourly etc/cron/monthly etc/cron/weekly
+mkdir -p bin dev lib lib64 run mnt/root proc sbin sys usr/bin usr/sbin tmp home var/log usr/share/udhcpc usr/local/bin etc/init.d etc/rc.d var/run var/www/html etc/network/if-down.d etc/network/if-post-down.d etc/network/if-pre-up.d etc/network/if-up.d run
 
 # installation of the BusyBox
 cp ../files/busybox/busybox bin
@@ -318,14 +284,6 @@ printf "#!/bin/sh
 rc" > etc/init.d/rcS
 ln -s /etc/init.d/rcS etc/init.d/rcK
 
-# default crontabs
-cat << EOF > var/spool/cron/crontabs/root
-15  * * * *   cd / && run-parts /etc/cron/hourly
-23  6 * * *   cd / && run-parts /etc/cron/daily
-47  6 * * 0   cd / && run-parts /etc/cron/weekly
-33  5 1 * *   cd / && run-parts /etc/cron/monthly
-EOF
-
 # logrotate
 cat << EOF > usr/sbin/logrotate
 #!/bin/sh 
@@ -341,7 +299,6 @@ for log in \$(ls -1 \${dir} | grep -Ev '\.gz$'); do
   fi
 done
 EOF
-ln -s ../../../usr/sbin/logrotate etc/cron/daily/logrotate
 
 # init scripts installer
 cat << EOF > usr/bin/add-rc.d
@@ -368,7 +325,6 @@ EOF
 initdata="
 networking|network|30|/sbin/ifup|-a|/sbin/ifdown
 telnetd|telnet daemon|80|/usr/sbin/telnetd|-p 23
-cron|cron daemon|20|/usr/sbin/crond
 syslogd|syslog|10|/sbin/syslogd
 httpd|http server||/usr/sbin/httpd|-vvv -f -u service -h /var/www/html||httpd.log
 ftpd|ftp daemon||/usr/bin/tcpsvd|-vE 0.0.0.0 21 ftpd -S -a service -w /var/www/html"
@@ -434,12 +390,8 @@ touch proc/mounts var/log/wtmp var/log/lastlog
 chmod 640  etc/shadow etc/inittab
 chmod 664  var/log/lastlog var/log/wtmp
 chmod 4755 bin/busybox
-chmod 600  var/spool/cron/crontabs/root
-chmod 755  usr/sbin/nologin sbin/disban init sbin/man etc/init.d/rcS\
-           usr/sbin/logrotate usr/bin/add-rc.d sbin/halt\
-           usr/share/udhcpc/default.script 
-chmod 644  etc/passwd etc/group etc/hostname etc/shells etc/hosts etc/fstab\
-           etc/issue etc/motd etc/network/interfaces etc/profile
+chmod 755  usr/sbin/nologin sbin/disban init sbin/man etc/init.d/rcS usr/sbin/logrotate usr/bin/add-rc.d sbin/halt usr/share/udhcpc/default.script 
+chmod 644  etc/passwd etc/group etc/hostname etc/shells etc/hosts etc/fstab etc/issue etc/motd etc/network/interfaces etc/profile
 
 echo "** Building initramfs"
 find . | cpio -H newc -o 2> /dev/null | gzip > /mnt/boot/$initrd_file
@@ -448,4 +400,3 @@ chmod 400 /mnt/boot/$initrd_file
 rm -r rootfs
 umount /mnt
 printf "\n** all done **\n\n"
-

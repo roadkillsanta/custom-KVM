@@ -74,11 +74,11 @@ wipefs -af /dev/$device > /dev/null 2>&1
   printf "n\np\n${part}\n2048\n\nw\n" | \
 	 ./files/busybox/busybox fdisk /dev/$device > /dev/null 2>&1
 
-echo y | mkfs.ext4 /dev/${device}
-uuid=$(blkid /dev/${device} -sUUID -ovalue)
+echo y | mkfs.ext4 /dev/${device}${part}
+uuid=$(blkid /dev/${device}${part} -sUUID -ovalue)
 
 
-mount /dev/${device} /mnt
+mount /dev/${device}${part} /mnt
 mkdir /mnt/boot
 host=$(printf $(printf $distro_name | tr A-Z a-z) | cut -d" " -f 1)
 
