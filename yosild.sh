@@ -50,20 +50,14 @@ echo "CONFIG_STATIC_LIBGCC=y" >> .config
 make
 cd ../../
 
-
 echo "** Partitioning $" && sleep 2
-part=1
 lba=2048
 wipefs -af $ > /dev/null 2>&1
   echo "** Preparation of the system partition"
-  printf "n\np\n${part}\n2048\n\nw\n" | \
-	 ./files/busybox/busybox fdisk $ > /dev/null 2>&1
+  printf "n\np\n\n2048\n\nw\n" | ./files/busybox/busybox fdisk $ > /dev/null 2>&1
+uuid=$(blkid ${device} -sUUID -ovalue)
 
-echo y | mkfs.ext4 ${}${part}
-uuid=$(blkid ${device}${part} -sUUID -ovalue)
-
-
-mount ${device}${part} /mnt
+mount ${device} /mnt
 mkdir /mnt/boot
 host=$(printf $(printf $distro_name | tr A-Z a-z) | cut -d" " -f 1)
 
@@ -112,7 +106,7 @@ echo Loading Linux
 # creation of necessary directories
 mkdir rootfs
 cd rootfs
-mkdir -p bin dev lib lib64 run mnt/root proc sbin sys usr/bin usr/sbin tmp home var/log usr/share/udhcpc usr/local/bin var/spool/cron/crontabs etc/init.d etc/rc.d var/run var/www/html etc/network/if-down.d etc/network/if-post-down.d etc/network/if-pre-up.d etc/network/if-up.d run
+mkdir -p bin dev lib lib64 run mnt/root proc sbin sys usr/bin usr/sbin tmp home var/log usr/share/udhcpc usr/local/bin etc/init.d etc/rc.d var/run var/www/html etc/network/if-down.d etc/network/if-post-down.d etc/network/if-pre-up.d etc/network/if-up.d run
 
 # installation of the BusyBox
 cp ../files/busybox/busybox bin
@@ -290,14 +284,6 @@ printf "#!/bin/sh
 rc" > etc/init.d/rcS
 ln -s /etc/init.d/rcS etc/init.d/rcK
 
-# default crontabs
-cat << EOF > var/spool/cron/crontabs/root
-15  * * * *   cd / && run-parts /etc/cron/hourly
-23  6 * * *   cd / && run-parts /etc/cron/daily
-47  6 * * 0   cd / && run-parts /etc/cron/weekly
-33  5 1 * *   cd / && run-parts /etc/cron/monthly
-EOF
-
 # logrotate
 cat << EOF > usr/sbin/logrotate
 #!/bin/sh 
@@ -313,7 +299,6 @@ for log in \$(ls -1 \${dir} | grep -Ev '\.gz$'); do
   fi
 done
 EOF
-ln -s ../../../usr/sbin/logrotate etc/cron/daily/logrotate
 
 # init scripts installer
 cat << EOF > usr/bin/add-rc.d
@@ -340,7 +325,6 @@ EOF
 initdata="
 networking|network|30|/sbin/ifup|-a|/sbin/ifdown
 telnetd|telnet daemon|80|/usr/sbin/telnetd|-p 23
-cron|cron daemon|20|/usr/sbin/crond
 syslogd|syslog|10|/sbin/syslogd
 httpd|http server||/usr/sbin/httpd|-vvv -f -u service -h /var/www/html||httpd.log
 ftpd|ftp daemon||/usr/bin/tcpsvd|-vE 0.0.0.0 21 ftpd -S -a service -w /var/www/html"
@@ -406,7 +390,6 @@ touch proc/mounts var/log/wtmp var/log/lastlog
 chmod 640  etc/shadow etc/inittab
 chmod 664  var/log/lastlog var/log/wtmp
 chmod 4755 bin/busybox
-chmod 600  var/spool/cron/crontabs/root
 chmod 755  usr/sbin/nologin sbin/disban init sbin/man etc/init.d/rcS\
            usr/sbin/logrotate usr/bin/add-rc.d sbin/halt\
            usr/share/udhcpc/default.script 
