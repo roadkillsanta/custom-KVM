@@ -31,9 +31,7 @@ printf "** Deleting all data from $device"
 [ -d ./files ] || mkdir files
 echo "** BusyBox installation"
 
-apt update && apt install -y ca-certificates wget build-essential\
-libncurses5 libncurses5-dev bison flex libelf-dev chrpath gawk\
-texinfo libsdl1.2-dev whiptail diffstat cpio libssl-dev bc
+apt update && apt install -y ca-certificates wget build-essential libncurses5 libncurses5-dev bison flex libelf-dev chrpath gawk texinfo libsdl1.2-dev whiptail diffstat cpio libssl-dev bc
 
 cd files/
 rm -r busybox* > /dev/null 2>&1
@@ -53,19 +51,19 @@ make
 cd ../../
 
 
-echo "** Partitioning $device" && sleep 2
+echo "** Partitioning $" && sleep 2
 part=1
 lba=2048
-wipefs -af $device > /dev/null 2>&1
+wipefs -af $ > /dev/null 2>&1
   echo "** Preparation of the system partition"
   printf "n\np\n${part}\n2048\n\nw\n" | \
-	 ./files/busybox/busybox fdisk $device > /dev/null 2>&1
+	 ./files/busybox/busybox fdisk $ > /dev/null 2>&1
 
-echo y | mkfs.ext4 ${device}${part}
+echo y | mkfs.ext4 ${}${part}
 uuid=$(blkid ${device}${part} -sUUID -ovalue)
 
 
-mount /dev/${device}${part} /mnt
+mount ${device}${part} /mnt
 mkdir /mnt/boot
 host=$(printf $(printf $distro_name | tr A-Z a-z) | cut -d" " -f 1)
 
@@ -114,12 +112,7 @@ echo Loading Linux
 # creation of necessary directories
 mkdir rootfs
 cd rootfs
-mkdir -p bin dev lib lib64 run mnt/root proc sbin sys usr/bin \
-         usr/sbin tmp home var/log usr/share/udhcpc usr/local/bin \
-         var/spool/cron/crontabs etc/init.d etc/rc.d var/run \
-         var/www/html etc/network/if-down.d etc/network/if-post-down.d \
-         etc/network/if-pre-up.d etc/network/if-up.d run \
-         etc/cron/daily etc/cron/hourly etc/cron/monthly etc/cron/weekly
+mkdir -p bin dev lib lib64 run mnt/root proc sbin sys usr/bin usr/sbin tmp home var/log usr/share/udhcpc usr/local/bin var/spool/cron/crontabs etc/init.d etc/rc.d var/run var/www/html etc/network/if-down.d etc/network/if-post-down.d etc/network/if-pre-up.d etc/network/if-up.d run
 
 # installation of the BusyBox
 cp ../files/busybox/busybox bin
