@@ -1,0 +1,9 @@
+[submodule "syslinux"]
+	path = syslinux
+	url = https://github.com/geneC/syslinux.git
+[submodule "linux-tkg"]
+	path = linux-tkg
+	url = https://github.com/Frogging-Family/linux-tkg.git
+[submodule "projectc"]
+	path = projectc
+	url = https://gitlab.com/alfredchen/projectc.git
